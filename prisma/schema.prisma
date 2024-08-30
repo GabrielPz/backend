@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(uuid())
+  name     String
+  cpf      String  @unique
+  email    String  @unique
+  phone    String  @unique
+  password String
+  orders   Order[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Order {
+  id                 String          @id @default(uuid())
+  user               User            @relation(fields: [userId], references: [id])
+  userId             String
+  brlValue           Float           @map("brl_value")
+  yuanValue          Float           @map("yuan_value")
+  userPaymentStatus  String          @default("pending")
+  adminPaymentStatus String          @default("pending")
+  expireAt           String          @map("expire_at")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  paymentData        Json?
+  qrCode             QrCode?
+  proofOfPayment     ProofOfPayment?
+
+  @@map("orders")
+}
+
+model QrCode {
+  id        String   @id @default(uuid())
+  orderId   String?  @unique
+  order     Order?   @relation(fields: [orderId], references: [id])
+  link      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("qrcodes")
+}
+
+model ConfigValues {
+  id                     String @id @default(uuid())
+  yuanPercentageIncrease Float  @map("yuan_percentage_increase")
+
+  @@map("config_values")
+}
+
+model ProofOfPayment {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id])
+  link      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("proofs_of_payment")
+}
