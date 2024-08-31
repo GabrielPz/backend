@@ -43,7 +43,7 @@ async function uploadFileAndGetURL(file: any): Promise<string> {
 }
 
 export async function uploadProofsOfPayment(app: FastifyInstance) {
-  await app.register(import('@fastify/multipart'), {
+  await app.register(import("@fastify/multipart"), {
     limits: {
       fileSize: 20971520 // 20MB
     }
@@ -52,6 +52,7 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/proofs-of-payment/upload/:id",
     {
+      preHandler: autenticarToken,
       schema: {
         preHandler: [
           // autenticarToken
@@ -87,6 +88,7 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
       let searchOrder = await prisma.order.findUnique({
         where: { id },
         select: {
+          id: true,
           proofOfPayment: {
             select: {
               link: true
@@ -95,20 +97,19 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
         }
       });
 
+      if (!searchOrder) {
+        return reply.status(400).send({ message: "Order not found" });
+      }
+
       const imageQrCodeProofOfPayment = await uploadFileAndGetURL(file);
 
-      if (searchOrder && searchOrder.proofOfPayment?.link != null) {
-        const storageRef = ref(storage, `${searchOrder.proofOfPayment?.link}`);
-        await deleteObject(storageRef);
+      if (!imageQrCodeProofOfPayment) {
+        return reply.status(400).send({ message: "File not found" });
       }
-      
-      const createProofOfPayment = await prisma.proofOfPayment.upsert({
-        where: { orderId: id },
-        update: {
-          link: imageQrCodeProofOfPayment
-        },
-        create: {
-          orderId: id,
+
+      const createProofOfPayment = await prisma.proofOfPayment.create({
+        data: {
+          orderId: searchOrder.id,
           link: imageQrCodeProofOfPayment
         }
       });
@@ -116,7 +117,6 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
       if (!createProofOfPayment) {
         return reply.status(400).send({ message: "QR Code not found" });
       }
-      
 
       return reply.status(200).send({ message: "File uploaded" });
     }

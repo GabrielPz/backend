@@ -8,7 +8,7 @@ import { v4 } from "uuid";
 
 const client = new MercadoPagoConfig({
   accessToken:
-    "TEST-5286490925840188-082920-39578d3eeb3e96e3071eded6e49cde67-607790691"
+    process.env.ACCESS_TOKEN || ""
 });
 const payments = new Payment(client);
 
@@ -111,6 +111,7 @@ export async function orderRoutes(app: FastifyInstance) {
       let paymentResult;
       try {
         paymentResult = await payments.create(paymentInfo);
+        console.log(paymentResult);
       } catch (error) {
         console.log("Erro ao processar pagamento:", error);
         return reply
@@ -244,7 +245,8 @@ export async function orderRoutes(app: FastifyInstance) {
           proofOfPayment: true,
           qrCode: true,
           updatedAt: true,
-          user: true
+          user: true,
+          external_reference: true
         }
       });
 

@@ -51,6 +51,7 @@ export async function uploadQrCode(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/qrcodes/upload/:id",
     {
+      preHandler: autenticarToken,
       schema: {
         preHandler: [
           // autenticarToken
@@ -101,15 +102,12 @@ export async function uploadQrCode(app: FastifyInstance) {
 
       const imageQrCode = await uploadFileAndGetURL(file);
 
-      if (searchOrder && searchOrder.qrCode?.link != null) {
-        const storageRef = ref(storage, `${searchOrder.qrCode?.link}`);
-        await deleteObject(storageRef);
+      if (!imageQrCode) {
+        return reply.status(400).send({ message: "File not found" });
       }
 
-      const createQrCode = await prisma.qrCode.upsert({
-        where: { id },
-        update: { link: imageQrCode, orderId: id },
-        create: { link: imageQrCode, orderId: id }
+      const createQrCode = await prisma.qrCode.create({
+        data: { link: imageQrCode, orderId: id }
       });
 
       if (!createQrCode) {
