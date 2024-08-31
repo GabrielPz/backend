@@ -28,6 +28,7 @@ export async function login(app: FastifyInstance) {
             token: z.string(),
             id: z.string().uuid(),
             name: z.string(),
+            cpf: z.string(),
             email: z.string().email(),
           }),
           400: z.object({
@@ -47,6 +48,7 @@ export async function login(app: FastifyInstance) {
           name: true,
           email: true,
           password: true,
+          cpf: true,
         },
       });
 
@@ -73,6 +75,7 @@ export async function login(app: FastifyInstance) {
         id: user.id,
         name: user.name,
         email: user.email,
+        cpf: user.cpf,
       });
     }
   );

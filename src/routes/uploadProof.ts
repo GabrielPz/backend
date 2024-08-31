@@ -4,7 +4,7 @@ import {
   ref,
   uploadBytes,
   getDownloadURL,
-  deleteObject
+  deleteObject,
 } from "firebase/storage";
 import multer from "multer";
 import { MultipartFile } from "@fastify/multipart";
@@ -20,7 +20,7 @@ async function uploadFileAndGetURL(file: any): Promise<string> {
     "image/png",
     "image/jpeg",
     "application/pdf",
-    "image/jpg"
+    "image/jpg",
   ];
   if (!allowedMimeTypes.includes(file.mimetype)) {
     throw new Error(
@@ -33,7 +33,7 @@ async function uploadFileAndGetURL(file: any): Promise<string> {
 
   try {
     await uploadBytes(storageRef, await file.toBuffer(), {
-      contentType: file.mimetype
+      contentType: file.mimetype,
     });
     const downloadURL = await getDownloadURL(storageRef);
     return downloadURL;
@@ -45,8 +45,8 @@ async function uploadFileAndGetURL(file: any): Promise<string> {
 export async function uploadProofsOfPayment(app: FastifyInstance) {
   await app.register(import("@fastify/multipart"), {
     limits: {
-      fileSize: 20971520 // 20MB
-    }
+      fileSize: 20971520, // 20MB
+    },
   });
 
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -56,26 +56,26 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
       schema: {
         preHandler: [
           // autenticarToken
-          upload.single("profilePhoto")
+          upload.single("profilePhoto"),
         ],
         params: z.object({
-          id: z.string().uuid()
+          id: z.string().uuid(),
         }),
         headers: z.object({
-          authorization: z.string().optional()
+          authorization: z.string().optional(),
         }),
         response: {
           200: z.object({
-            message: z.string()
+            message: z.string(),
           }),
           400: z.object({
-            message: z.string()
+            message: z.string(),
           }),
           500: z.object({
-            message: z.string()
-          })
-        }
-      }
+            message: z.string(),
+          }),
+        },
+      },
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -91,10 +91,10 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
           id: true,
           proofOfPayment: {
             select: {
-              link: true
-            }
-          }
-        }
+              link: true,
+            },
+          },
+        },
       });
 
       if (!searchOrder) {
@@ -104,18 +104,20 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
       const imageQrCodeProofOfPayment = await uploadFileAndGetURL(file);
 
       if (!imageQrCodeProofOfPayment) {
-        return reply.status(400).send({ message: "File not found" });
+        return reply.status(400).send({ message: "Error Uploading File" });
       }
 
       const createProofOfPayment = await prisma.proofOfPayment.create({
         data: {
           orderId: searchOrder.id,
-          link: imageQrCodeProofOfPayment
-        }
+          link: imageQrCodeProofOfPayment,
+        },
       });
 
       if (!createProofOfPayment) {
-        return reply.status(400).send({ message: "QR Code not found" });
+        return reply
+          .status(400)
+          .send({ message: "Error creating Proof of Payment" });
       }
 
       return reply.status(200).send({ message: "File uploaded" });

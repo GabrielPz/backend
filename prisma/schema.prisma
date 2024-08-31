@@ -33,8 +33,10 @@ model Order {
   expireAt           String          @map("expire_at")
   createdAt          DateTime        @default(now()) @map("created_at")
   updatedAt          DateTime        @updatedAt @map("updated_at")
-  external_reference String?          @unique @map("external_reference")
+  external_reference String?         @unique @map("external_reference")
+  closed             Boolean         @default(false)
   paymentData        Json?
+  pixInfo            Json?
   qrCode             QrCode?
   proofOfPayment     ProofOfPayment?
 

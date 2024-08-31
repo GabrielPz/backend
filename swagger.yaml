@@ -1,0 +1,793 @@
+openapi: 3.0.0
+info:
+  title: API Documentation
+  version: 1.0.0
+  description: API documentation for the application
+
+servers:
+  - url: http://localhost:3000
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        cpf:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        password:
+          type: string
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        brlValue:
+          type: number
+        yuanValue:
+          type: number
+        userPaymentStatus:
+          type: string
+        adminPaymentStatus:
+          type: string
+        expireAt:
+          type: string
+        paymentData:
+          type: object
+          properties:
+            description:
+              type: string
+            payment_method_id:
+              type: string
+            payer:
+              type: object
+              properties:
+                email:
+                  type: string
+                identification:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    number:
+                      type: string
+    QrCode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        link:
+          type: string
+    ProofOfPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        link:
+          type: string
+    YuanConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        yuanPercentageIncrease:
+          type: number
+    ConvertBrlToYuan:
+      type: object
+      properties:
+        brlValue:
+          type: number
+        convertedValue:
+          type: number
+        yuanPercentageIncrease:
+          type: number
+    Webhook:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            type:
+              type: string
+    AuthRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+
+paths:
+  /login:
+    post:
+      summary: Login
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /users:
+    post:
+      summary: Create User
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /users/{id}:
+    get:
+      summary: Get User by ID
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    put:
+      summary: Update User by ID
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    delete:
+      summary: Delete User by ID
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /orders:
+    post:
+      summary: Create Order
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paymentLink:
+                    type: string
+                    nullable: true
+                  qrCodeImg:
+                    type: string
+                    nullable: true
+                  qrCodeBase64:
+                    type: string
+                    nullable: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /orders/{id}:
+    get:
+      summary: Get Order by ID
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    put:
+      summary: Update Order by ID
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    delete:
+      summary: Delete Order by ID
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Order deleted
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /orders/user/{id}:
+    get:
+      summary: Get Orders by User ID
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Orders found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '404':
+          description: Orders not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /qrcodes:
+    post:
+      summary: Create QR Code
+      tags:
+        - QrCodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QrCode'
+      responses:
+        '201':
+          description: QR Code created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrCode'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /qrcodes/{id}:
+    get:
+      summary: Get QR Code by ID
+      tags:
+        - QrCodes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: QR Code found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrCode'
+        '404':
+          description: QR Code not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    put:
+      summary: Update QR Code by ID
+      tags:
+        - QrCodes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QrCode'
+      responses:
+        '200':
+          description: QR Code updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrCode'
+        '404':
+          description: QR Code not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    delete:
+      summary: Delete QR Code by ID
+      tags:
+        - QrCodes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: QR Code deleted
+        '404':
+          description: QR Code not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /proofs-of-payment:
+    post:
+      summary: Create Proof of Payment
+      tags:
+        - ProofsOfPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProofOfPayment'
+      responses:
+        '201':
+          description: Proof of Payment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProofOfPayment'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /proofs-of-payment/{id}:
+    get:
+      summary: Get Proof of Payment by ID
+      tags:
+        - ProofsOfPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Proof of Payment found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProofOfPayment'
+        '404':
+          description: Proof of Payment not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    put:
+      summary: Update Proof of Payment by ID
+      tags:
+        - ProofsOfPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProofOfPayment'
+      responses:
+        '200':
+          description: Proof of Payment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProofOfPayment'
+        '404':
+          description: Proof of Payment not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    delete:
+      summary: Delete Proof of Payment by ID
+      tags:
+        - ProofsOfPayment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Proof of Payment deleted
+        '404':
+          description: Proof of Payment not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /yuan:
+    post:
+      summary: Create Yuan Config
+      tags:
+        - Yuan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YuanConfig'
+      responses:
+        '201':
+          description: Yuan Config created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YuanConfig'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+    get:
+      summary: Get Yuan Configs
+      tags:
+        - Yuan
+      responses:
+        '200':
+          description: Yuan Configs found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YuanConfig'
+    put:
+      summary: Update Yuan Config
+      tags:
+        - Yuan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/YuanConfig'
+      responses:
+        '200':
+          description: Yuan Config updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YuanConfig'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /convert-brl-to-yuan:
+    post:
+      summary: Convert BRL to Yuan
+      tags:
+        - Conversion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConvertBrlToYuan'
+      responses:
+        '200':
+          description: Conversion successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConvertBrlToYuan'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /webhook:
+    post:
+      summary: Webhook
+      tags:
+        - Webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhook'
+      responses:
+        '200':
+          description: Webhook received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
