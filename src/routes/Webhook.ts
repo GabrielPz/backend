@@ -4,19 +4,12 @@ import { ZodTypeProvider } from "fastify-type-provider-zod";
 import axios from "axios";
 import { prisma } from "../lib/prisma";
 
-const webhookSchema = z.object({
-  data: z.object({
-    id: z.string(),
-    type: z.string(),
-  }),
-});
-
 export async function Webhook(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/webhook", { config: { rawBody: true } },
     async (request, reply) => {
       try {
-        const { data } = webhookSchema.parse(request.body);
+        const { data } = request.body as any;
         const { id, type } = data;
 
         console.log("request body: " + request.body);
