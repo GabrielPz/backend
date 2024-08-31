@@ -117,8 +117,7 @@ export async function orderRoutes(app: FastifyInstance) {
           .status(400)
           .send({ message: "Erro ao processar pagamento" });
       }
-      console.log(paymentResult);
-
+      
       const order = await prisma.order.create({
         data: {
           ...orderData,
@@ -132,19 +131,6 @@ export async function orderRoutes(app: FastifyInstance) {
       if (!order) {
         return reply.status(400).send({ message: "Order not created" });
       }
-
-      console.log("deu certo a criacao da order");
-
-      console.log(
-        paymentResult.point_of_interaction?.transaction_data?.ticket_url ?? ""
-      );
-      console.log(
-        paymentResult.point_of_interaction?.transaction_data?.qr_code ?? ""
-      );
-      console.log(
-        paymentResult.point_of_interaction?.transaction_data?.qr_code_base64 ??
-          ""
-      );
 
       return reply.status(201).send({
         paymentLink:
