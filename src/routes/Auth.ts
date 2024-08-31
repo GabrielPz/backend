@@ -83,14 +83,12 @@ export async function login(app: FastifyInstance) {
 
 export const autenticarToken = async (
   request: FastifyRequest,
-  reply: FastifyReply,
-  done: HookHandlerDoneFunction
+  reply: FastifyReply
 ) => {
   try {
     const token = request.headers["authorization"];
 
     if (!token) {
-      // console.log("Token não fornecido.");
       return reply.status(401).send({ message: "Token não fornecido." });
     }
 
@@ -99,20 +97,21 @@ export const autenticarToken = async (
       throw new Error("Secret key not found");
     }
 
-    jwt.verify(token, chaveSecreta, (erro: any, dadosDecodificados: any) => {
-      if (erro) {
-        // console.log("Token inválido:", erro);
-        return reply.status(401).send({ message: "Token inválido." });
-      }
-
-      //console.log('Dados do usuário decodificados:', dadosDecodificados);
-      (request as any).usuario = dadosDecodificados;
-      done();
+    const dadosDecodificados = await new Promise((resolve, reject) => {
+      jwt.verify(token, chaveSecreta, (erro: any, decoded: any) => {
+        if (erro) {
+          return reject(erro);
+        }
+        resolve(decoded);
+      });
     });
+
+    // Atribuindo os dados decodificados ao request
+    (request as any).usuario = dadosDecodificados;
   } catch (error) {
     return reply
-      .status(404)
-      .send({ error: "Ocorreu um erro ao verificar Token." });
+      .status(401)
+      .send({ message: "Token inválido ou erro ao verificar." });
   }
 };
 
