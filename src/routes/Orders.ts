@@ -100,7 +100,8 @@ export async function orderRoutes(app: FastifyInstance) {
             }
           },
           installments: body?.paymentData?.installments || 1,
-          external_reference: external
+          external_reference: external,
+          notification_url: 'https://backend-p624.onrender.com/webhook'
         },
         requestOptions: { idempotencyKey: external }
       };
