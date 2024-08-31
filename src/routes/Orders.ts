@@ -142,17 +142,6 @@ export async function orderRoutes(app: FastifyInstance) {
         data: {
           ...orderData,
           expireAt: paymentResult?.date_of_expiration || "",
-          pixInfo: {
-            paymentLink:
-              paymentResult.point_of_interaction?.transaction_data
-                ?.ticket_url || "",
-            qrCodeImg:
-              paymentResult.point_of_interaction?.transaction_data?.qr_code ||
-              "",
-            qrCodeBase64:
-              paymentResult.point_of_interaction?.transaction_data
-                ?.qr_code_base64 || "",
-          },
           userPaymentStatus: paymentResult?.status || "pending",
           adminPaymentStatus: "pending",
           userId: userId,
