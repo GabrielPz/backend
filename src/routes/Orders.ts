@@ -41,8 +41,8 @@ const bodyShema = z.object({
   paymentData: z.object({
     description: z.string(),
     payment_method_id: z.string(),
-    token: z.string().optional().nullable(),
-    installments: z.number().optional().nullable(),
+    token: z.string().optional().nullish(),
+    installments: z.number().optional().nullish(),
     payer: z.object({
       email: z.string(),
       identification: z.object({
@@ -102,9 +102,9 @@ export async function orderRoutes(app: FastifyInstance) {
           installments: body?.paymentData?.installments || 1,
           external_reference: external
         },
-        requestOptions: { idempotencyKey: "<SOME_UNIQUE_VALUE>" }
+        requestOptions: { idempotencyKey: external }
       };
-      if (body.paymentData.token) {
+      if (body.paymentData.token != null) {
         (paymentInfo.body as any).token = body.paymentData.token;
       }
 
