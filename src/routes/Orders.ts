@@ -163,8 +163,6 @@ export async function orderRoutes(app: FastifyInstance) {
           paymentResult.point_of_interaction?.transaction_data
             ?.qr_code_base64 ?? ""
       });
-
-      return reply.status(201);
     }
   );
 
