@@ -65,10 +65,14 @@ export async function orderRoutes(app: FastifyInstance) {
         headers: z.object({
           authorization: z.string().optional()
         }),
-        // response: {
-        //   201: any,
-        //   400: z.object({ message: z.string() })
-        // },
+        response: {
+          201: z.object({
+            paymentLink: z.string().nullish(),
+            qrCodeImg: z.string().nullish(),
+            qrCodeBase64: z.string().nullish()
+          }),
+          400: z.object({ message: z.string() })
+        }
         // preHandler: [autenticarToken]
       }
     },
@@ -104,7 +108,15 @@ export async function orderRoutes(app: FastifyInstance) {
         (paymentInfo.body as any).token = body.paymentData.token;
       }
 
-      const paymentResult = await payments.create(paymentInfo);
+      let paymentResult;
+      try {
+        paymentResult = await payments.create(paymentInfo);
+      } catch (error) {
+        console.log("Erro ao processar pagamento:", error);
+        return reply
+          .status(400)
+          .send({ message: "Erro ao processar pagamento" });
+      }
       console.log(paymentResult);
 
       const order = await prisma.order.create({
@@ -121,13 +133,28 @@ export async function orderRoutes(app: FastifyInstance) {
         return reply.status(400).send({ message: "Order not created" });
       }
 
-      return reply.status(200).send({
+      console.log("deu certo a criacao da order");
+
+      console.log(
+        paymentResult.point_of_interaction?.transaction_data?.ticket_url ?? ""
+      );
+      console.log(
+        paymentResult.point_of_interaction?.transaction_data?.qr_code ?? ""
+      );
+      console.log(
+        paymentResult.point_of_interaction?.transaction_data?.qr_code_base64 ??
+          ""
+      );
+
+      return reply.status(201).send({
         paymentLink:
-          paymentResult.point_of_interaction?.transaction_data?.ticket_url,
+          paymentResult.point_of_interaction?.transaction_data?.ticket_url ??
+          "",
         qrCodeImg:
-          paymentResult.point_of_interaction?.transaction_data?.qr_code,
+          paymentResult.point_of_interaction?.transaction_data?.qr_code ?? "",
         qrCodeBase64:
-          paymentResult.point_of_interaction?.transaction_data?.qr_code_base64
+          paymentResult.point_of_interaction?.transaction_data
+            ?.qr_code_base64 ?? ""
       });
     }
   );

@@ -21,6 +21,7 @@ import fCookie from "@fastify/cookie";
 import fastifyMultipart from "@fastify/multipart";
 import { uploadProofsOfPayment } from "./routes/uploadProof";
 import { uploadQrCode } from "./routes/uploadQrCode";
+import { Webhook } from "./routes/Webhook";
 
 const app = fastify();
 
@@ -61,6 +62,7 @@ app.register(fastifyCors, {
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
+app.register(Webhook);
 app.register(login);
 app.register(orderRoutes);
 app.register(uploadProofsOfPayment);
