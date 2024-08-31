@@ -13,12 +13,7 @@ const webhookSchema = z.object({
 
 export async function Webhook(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
-    "/webhook",
-    {
-      schema: {
-        body: webhookSchema,
-      },
-    },
+    "/webhook", { config: { rawBody: true } },
     async (request, reply) => {
       try {
         const { data } = webhookSchema.parse(request.body);

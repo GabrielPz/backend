@@ -16,6 +16,7 @@ import { qrCodeRoutes } from "./routes/QrCodes";
 import { userRoutes } from "./routes/Users";
 import { yuanRoutes } from "./routes/YuanConfig";
 import fjwt, { FastifyJWT } from "@fastify/jwt";
+import fastifyRawBody from "fastify-raw-body";
 
 import fCookie from "@fastify/cookie";
 import fastifyMultipart from "@fastify/multipart";
@@ -28,6 +29,11 @@ const app = fastify();
 // aqui determina qual o endereco do front-end que pode consumir nosso servidor
 app.register(fastifyCors, {
   origin: "*",
+});
+
+app.register(fastifyRawBody, {
+  runFirst: true,
+  global: false
 });
 
 // app.register(fjwt, {
