@@ -33,6 +33,7 @@ model Order {
   expireAt           String          @map("expire_at")
   createdAt          DateTime        @default(now()) @map("created_at")
   updatedAt          DateTime        @updatedAt @map("updated_at")
+  external_reference String?          @unique @map("external_reference")
   paymentData        Json?
   qrCode             QrCode?
   proofOfPayment     ProofOfPayment?
@@ -42,8 +43,8 @@ model Order {
 
 model QrCode {
   id        String   @id @default(uuid())
-  orderId   String?  @unique
-  order     Order?   @relation(fields: [orderId], references: [id])
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id])
   link      String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

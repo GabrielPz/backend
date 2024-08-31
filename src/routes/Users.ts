@@ -60,16 +60,19 @@ export async function userRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     "/users/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Get User by ID",
         tags: ["Users"],
         params: z.object({ id: z.string().uuid() }),
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         response: {
           200: userSchema.extend({ id: z.string().uuid() }),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -82,8 +85,8 @@ export async function userRoutes(app: FastifyInstance) {
           cpf: true,
           email: true,
           phone: true,
-          password: true,
-        },
+          password: true
+        }
       });
 
       if (!user) {
@@ -97,17 +100,20 @@ export async function userRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().put(
     "/users/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Update User by ID",
         tags: ["Users"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         body: userSchema,
         response: {
           200: userSchema.extend({ id: z.string().uuid() }),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -122,8 +128,8 @@ export async function userRoutes(app: FastifyInstance) {
           cpf: true,
           email: true,
           phone: true,
-          password: true,
-        },
+          password: true
+        }
       });
 
       if (!user) {
@@ -137,22 +143,25 @@ export async function userRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().delete(
     "/users/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Delete User by ID",
         tags: ["Users"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         response: {
           204: z.null(),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
 
       const user = await prisma.user.delete({
-        where: { id },
+        where: { id }
       });
 
       if (!user) {

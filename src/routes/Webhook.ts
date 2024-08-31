@@ -1,0 +1,85 @@
+import { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { ZodTypeProvider } from "fastify-type-provider-zod";
+import axios from "axios";
+import { prisma } from "../lib/prisma";
+
+const webhookSchema = z.object({
+  data: z.object({
+    id: z.string(),
+    type: z.string()
+  })
+});
+
+export async function Webhook(app: FastifyInstance) {
+  app.withTypeProvider<ZodTypeProvider>().post(
+    "/webhook",
+    {
+      schema: {
+        body: webhookSchema
+      }
+    },
+    async (request, reply) => {
+      try {
+        const { data } = webhookSchema.parse(request.body);
+        const { id, type } = data;
+
+        console.log("request body: " +request.body);
+        console.log("id e type: " +id, type);
+
+        const response = await axios.get(
+          `https://api.mercadopago.com/v1/payments/${id}`,
+          {
+            headers: {
+              Authorization:
+                "Bearer TEST-5286490925840188-082920-39578d3eeb3e96e3071eded6e49cde67-607790691"
+            }
+          }
+        );
+
+        const externalReference = response.data.external_reference;
+
+        console.log(externalReference);
+
+        switch (type) {
+          case "payment":
+            const searchOrder = await prisma.order.update({
+              where: {
+                external_reference: externalReference
+              },
+              data: {
+                userPaymentStatus: "payment"
+              }
+            });
+
+            if(!searchOrder) {
+              return reply.status(400).send({ message: "Order not found" });
+            }
+
+            break;
+          case "chargebacks":
+            const searchOrderChargeback = await prisma.order.update({
+              where: {
+                external_reference: externalReference
+              },
+              data: {
+                userPaymentStatus: "chargebacks"
+              }
+            });
+
+            if(!searchOrderChargeback) {
+              return reply.status(400).send({ message: "Order not found" });
+            }
+
+            break;
+          default:
+            return reply.status(400).send({ message: "Invalid type" });
+        }
+      } catch (error: any) {
+        return reply.status(400).send({ message: error.message });
+      }
+
+      return reply.status(200).send({ message: "Webhook received" });
+    }
+  );
+}

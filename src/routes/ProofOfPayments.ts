@@ -13,16 +13,19 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/proofs-of-payment",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Create Proof of Payment",
         tags: ["ProofsOfPayment"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         body: proofOfPaymentSchema,
         response: {
           201: proofOfPaymentSchema.extend({ id: z.string().uuid() }),
-          400: z.object({ message: z.string() }),
-        },
-      },
+          400: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const proofOfPaymentData = proofOfPaymentSchema.parse(request.body);
@@ -32,8 +35,8 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
         select: {
           id: true,
           orderId: true,
-          link: true,
-        },
+          link: true
+        }
       });
 
       if (!proofOfPayment) {
@@ -49,16 +52,19 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     "/proofs-of-payment/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Get Proof of Payment by ID",
         tags: ["ProofsOfPayment"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         response: {
           200: proofOfPaymentSchema.extend({ id: z.string().uuid() }),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -68,8 +74,8 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
         select: {
           id: true,
           orderId: true,
-          link: true,
-        },
+          link: true
+        }
       });
 
       if (!proofOfPayment) {
@@ -85,17 +91,20 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().put(
     "/proofs-of-payment/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Update Proof of Payment by ID",
         tags: ["ProofsOfPayment"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         body: proofOfPaymentSchema,
         response: {
           200: proofOfPaymentSchema.extend({ id: z.string().uuid() }),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -107,8 +116,8 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
         select: {
           id: true,
           orderId: true,
-          link: true,
-        },
+          link: true
+        }
       });
 
       if (!proofOfPayment) {
@@ -124,22 +133,25 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().delete(
     "/proofs-of-payment/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Delete Proof of Payment by ID",
         tags: ["ProofsOfPayment"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         response: {
           204: z.null(),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
 
       const proofOfPayment = await prisma.proofOfPayment.delete({
-        where: { id },
+        where: { id }
       });
 
       if (!proofOfPayment) {
@@ -151,4 +163,6 @@ export async function proofOfPaymentRoutes(app: FastifyInstance) {
       return reply.status(204).send();
     }
   );
+
+  
 }

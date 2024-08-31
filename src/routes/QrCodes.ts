@@ -5,25 +5,31 @@ import { z } from "zod";
 import { autenticarToken } from "./Auth";
 
 const qrCodeSchema = z.object({
-  orderId: z.string().uuid().nullable().optional(),
+  orderId: z.string().uuid(),
   link: z.string(),
-  status: z.string().default("ACTIVE"),
 });
 
 export async function qrCodeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/qrcodes",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Create QR Code",
         tags: ["QrCodes"],
         body: qrCodeSchema,
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         response: {
-          201: qrCodeSchema.extend({ id: z.string().uuid() }),
-          400: z.object({ message: z.string() }),
-        },
-      },
+          201: z.object({
+            id: z.string().uuid(),
+            orderId: z.string().uuid().nullable(),
+            link: z.string()
+          }),
+          400: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const qrCodeData = qrCodeSchema.parse(request.body);
@@ -33,9 +39,8 @@ export async function qrCodeRoutes(app: FastifyInstance) {
         select: {
           id: true,
           orderId: true,
-          link: true,
-          status: true,
-        },
+          link: true
+        }
       });
 
       if (!qrCode) {
@@ -49,16 +54,23 @@ export async function qrCodeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     "/qrcodes/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         summary: "Get QR Code by ID",
         tags: ["QrCodes"],
         params: z.object({ id: z.string().uuid() }),
         response: {
-          200: qrCodeSchema.extend({ id: z.string().uuid() }),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          200: z.object({
+            id: z.string().uuid(),
+            orderId: z.string().uuid().nullable(),
+            link: z.string()
+          }),
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -68,9 +80,8 @@ export async function qrCodeRoutes(app: FastifyInstance) {
         select: {
           id: true,
           orderId: true,
-          link: true,
-          status: true,
-        },
+          link: true
+        }
       });
 
       if (!qrCode) {
@@ -84,17 +95,20 @@ export async function qrCodeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().put(
     "/qrcodes/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         summary: "Update QR Code by ID",
         tags: ["QrCodes"],
         params: z.object({ id: z.string().uuid() }),
         body: qrCodeSchema,
         response: {
           200: qrCodeSchema.extend({ id: z.string().uuid() }),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -106,9 +120,8 @@ export async function qrCodeRoutes(app: FastifyInstance) {
         select: {
           id: true,
           orderId: true,
-          link: true,
-          status: true,
-        },
+          link: true
+        }
       });
 
       if (!qrCode) {
@@ -122,22 +135,25 @@ export async function qrCodeRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().delete(
     "/qrcodes/:id",
     {
+      preHandler: autenticarToken,
       schema: {
-        preHandler: autenticarToken,
         summary: "Delete QR Code by ID",
         tags: ["QrCodes"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         response: {
           204: z.null(),
-          404: z.object({ message: z.string() }),
-        },
-      },
+          404: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
 
       const qrCode = await prisma.qrCode.delete({
-        where: { id },
+        where: { id }
       });
 
       if (!qrCode) {
@@ -147,4 +163,5 @@ export async function qrCodeRoutes(app: FastifyInstance) {
       return reply.status(204).send();
     }
   );
+
 }

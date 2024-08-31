@@ -84,9 +84,11 @@ export const autenticarToken = async (
   done: HookHandlerDoneFunction
 ) => {
   try {
-    const token = request.headers["authorization"]?.split(" ")[1];
+    const token = request.headers["authorization"];
+
     if (!token) {
-      return reply.status(401).send({ mensagem: "Token não fornecido." });
+      // console.log("Token não fornecido.");
+      return reply.status(401).send({ message: "Token não fornecido." });
     }
 
     const chaveSecreta = process.env.SECRET_KEY_JWT;
@@ -94,20 +96,53 @@ export const autenticarToken = async (
       throw new Error("Secret key not found");
     }
 
-    const dadosDecodificados = await new Promise((resolve, reject) => {
-      jwt.verify(token, chaveSecreta, (erro: any, decoded: any) => {
-        if (erro) {
-          reject(erro);
-        } else {
-          resolve(decoded);
-        }
-      });
-    });
+    jwt.verify(token, chaveSecreta, (erro: any, dadosDecodificados: any) => {
+      if (erro) {
+        // console.log("Token inválido:", erro);
+        return reply.status(401).send({ message: "Token inválido." });
+      }
 
-    (request as any).usuario = dadosDecodificados;
-    done();
+      //console.log('Dados do usuário decodificados:', dadosDecodificados);
+      (request as any).usuario = dadosDecodificados;
+      done();
+    });
   } catch (error) {
-    console.error("Authentication error:", error);
-    return reply.status(403).send({ mensagem: "Token inválido." });
+    return reply
+      .status(404)
+      .send({ error: "Ocorreu um erro ao verificar Token." });
   }
 };
+
+// export const autenticarToken = async (
+//   request: FastifyRequest,
+//   reply: FastifyReply,
+//   done: HookHandlerDoneFunction
+// ) => {
+//   try {
+//     const token = request.headers["authorization"]?.split(" ")[1];
+//     if (!token) {
+//       return reply.status(401).send({ mensagem: "Token não fornecido." });
+//     }
+
+//     const chaveSecreta = process.env.SECRET_KEY_JWT;
+//     if (!chaveSecreta) {
+//       throw new Error("Secret key not found");
+//     }
+
+//     const dadosDecodificados = await new Promise((resolve, reject) => {
+//       jwt.verify(token, chaveSecreta, (erro: any, decoded: any) => {
+//         if (erro) {
+//           reject(erro);
+//         } else {
+//           resolve(decoded);
+//         }
+//       });
+//     });
+
+//     (request as any).usuario = dadosDecodificados;
+//     done();
+//   } catch (error) {
+//     console.error("Authentication error:", error);
+//     return reply.status(403).send({ mensagem: "Token inválido." });
+//   }
+// };

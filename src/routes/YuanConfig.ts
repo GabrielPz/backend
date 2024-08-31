@@ -5,27 +5,30 @@ import { z } from "zod";
 import { autenticarToken } from "./Auth";
 
 const yuanSchema = z.object({
-  yuanPercentageIncrease: z.number(),
+  yuanPercentageIncrease: z.number()
 });
 
 const convertBrlSchema = z.object({
-  brlValue: z.number(),
+  brlValue: z.number()
 });
 
 export async function yuanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/yuan",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Create Yuan Config",
         tags: ["Yuan"],
         body: yuanSchema,
-        preHandler: [autenticarToken],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         response: {
           201: yuanSchema.extend({ id: z.string().uuid() }),
-          400: z.object({ message: z.string() }),
-        },
-      },
+          400: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const yuanData = yuanSchema.parse(request.body);
@@ -33,8 +36,8 @@ export async function yuanRoutes(app: FastifyInstance) {
         data: yuanData,
         select: {
           id: true,
-          yuanPercentageIncrease: true,
-        },
+          yuanPercentageIncrease: true
+        }
       });
 
       if (!config) {
@@ -48,21 +51,24 @@ export async function yuanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     "/yuan",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Get Yuan Configs",
         tags: ["Yuan"],
-        preHandler: [autenticarToken],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         response: {
-          200: z.array(yuanSchema.extend({ id: z.string().uuid() })),
-        },
-      },
+          200: z.array(yuanSchema.extend({ id: z.string().uuid() }))
+        }
+      }
     },
     async (request, reply) => {
       const configs = await prisma.configValues.findMany({
         select: {
           id: true,
-          yuanPercentageIncrease: true,
-        },
+          yuanPercentageIncrease: true
+        }
       });
 
       return reply.status(200).send(configs);
@@ -72,16 +78,19 @@ export async function yuanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().put(
     "/yuan",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Update Yuan Config",
         tags: ["Yuan"],
         body: yuanSchema,
-        preHandler: [autenticarToken],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         response: {
           200: yuanSchema.extend({ id: z.string().uuid() }),
-          400: z.object({ message: z.string() }),
-        },
-      },
+          400: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
       const yuanData = yuanSchema.parse(request.body);
@@ -95,16 +104,16 @@ export async function yuanRoutes(app: FastifyInstance) {
           data: yuanData,
           select: {
             id: true,
-            yuanPercentageIncrease: true,
-          },
+            yuanPercentageIncrease: true
+          }
         });
       } else {
         updatedConfig = await prisma.configValues.create({
           data: yuanData,
           select: {
             id: true,
-            yuanPercentageIncrease: true,
-          },
+            yuanPercentageIncrease: true
+          }
         });
       }
 
@@ -115,43 +124,51 @@ export async function yuanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/convert-brl-to-yuan",
     {
+      preHandler: autenticarToken,
       schema: {
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         summary: "Convert BRL to Yuan",
         tags: ["Conversion"],
         body: convertBrlSchema,
-        preHandler: [app.authenticate],
         response: {
           200: z.object({
             brlValue: z.number(),
             convertedValue: z.number(),
-            yuanPercentageIncrease: z.number(),
+            yuanPercentageIncrease: z.number()
           }),
           400: z.object({ message: z.string() }),
-        },
-      },
+          401: z.object({ message: z.string() })
+        }
+      }
     },
     async (request, reply) => {
-      const { brlValue } = convertBrlSchema.parse(request.body);
+      try {
+        const { brlValue } = convertBrlSchema.parse(request.body);
 
-      const config = await prisma.configValues.findFirst({
-        select: {
-          yuanPercentageIncrease: true,
-        },
-      });
+        const config = await prisma.configValues.findFirst({
+          select: {
+            yuanPercentageIncrease: true
+          }
+        });
 
-      if (!config) {
-        return reply
-          .status(400)
-          .send({ message: "Yuan configuration not found" });
+        if (!config) {
+          return reply
+            .status(400)
+            .send({ message: "Yuan configuration not found" });
+        }
+
+        const convertedValue = brlValue * config.yuanPercentageIncrease;
+
+        return reply.status(200).send({
+          brlValue,
+          convertedValue,
+          yuanPercentageIncrease: config.yuanPercentageIncrease
+        });
+      } catch (error: any) {
+        return reply.status(400).send({ message: error.message });
       }
-
-      const convertedValue = brlValue * config.yuanPercentageIncrease;
-
-      return reply.status(200).send({
-        brlValue,
-        convertedValue,
-        yuanPercentageIncrease: config.yuanPercentageIncrease,
-      });
     }
   );
 }

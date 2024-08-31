@@ -4,11 +4,11 @@ import { prisma } from "../lib/prisma";
 import { any, z } from "zod";
 import { autenticarToken } from "./Auth";
 import { Payment, MercadoPagoConfig } from "mercadopago";
-import mercadopago from "mercadopago";
+import { v4 } from "uuid";
 
 const client = new MercadoPagoConfig({
   accessToken:
-    "TEST-5286490925840188-082920-39578d3eeb3e96e3071eded6e49cde67-607790691",
+    "TEST-5286490925840188-082920-39578d3eeb3e96e3071eded6e49cde67-607790691"
 });
 const payments = new Payment(client);
 
@@ -27,15 +27,17 @@ const orderSchema = z.object({
       email: z.string(),
       identification: z.object({
         type: z.string(),
-        number: z.string(),
-      }),
-    }),
-  }),
+        number: z.string()
+      })
+    })
+  })
 });
 
 const bodyShema = z.object({
+  userId: z.string().uuid(),
   brlValue: z.number(),
   yuanValue: z.number(),
+  expireAt: z.string(),
   paymentData: z.object({
     description: z.string(),
     payment_method_id: z.string(),
@@ -45,26 +47,30 @@ const bodyShema = z.object({
       email: z.string(),
       identification: z.object({
         type: z.string(),
-        number: z.string(),
-      }),
-    }),
-  }),
+        number: z.string()
+      })
+    })
+  })
 });
 
 export async function orderRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/orders",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Create Order",
         tags: ["Orders"],
         body: bodyShema,
-        response: {
-          201: any,
-          400: z.object({ message: z.string() }),
-        },
-        preHandler: [autenticarToken],
-      },
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
+        // response: {
+        //   201: any,
+        //   400: z.object({ message: z.string() })
+        // },
+        // preHandler: [autenticarToken]
+      }
     },
     async (request, reply) => {
       const orderData = orderSchema.parse(request.body);
@@ -72,10 +78,11 @@ export async function orderRoutes(app: FastifyInstance) {
       const user = await prisma.user.findUnique({
         where: { email: request.body.paymentData.payer.email },
         select: {
-          id: true,
-        },
+          id: true
+        }
       });
       const userId = user!.id;
+      const external = v4();
       let paymentInfo = {
         body: {
           transaction_amount: body.brlValue,
@@ -85,18 +92,20 @@ export async function orderRoutes(app: FastifyInstance) {
             email: body.paymentData.payer.email,
             identification: {
               type: body.paymentData.payer.identification.type,
-              number: body.paymentData.payer.identification.number,
-            },
+              number: body.paymentData.payer.identification.number
+            }
           },
           installments: body?.paymentData?.installments || 1,
+          external_reference: external
         },
-        requestOptions: { idempotencyKey: "<SOME_UNIQUE_VALUE>" },
+        requestOptions: { idempotencyKey: "<SOME_UNIQUE_VALUE>" }
       };
       if (body.paymentData.token) {
         (paymentInfo.body as any).token = body.paymentData.token;
       }
 
       const paymentResult = await payments.create(paymentInfo);
+      console.log(paymentResult);
 
       const order = await prisma.order.create({
         data: {
@@ -104,8 +113,13 @@ export async function orderRoutes(app: FastifyInstance) {
           userPaymentStatus: paymentResult?.status || "pending",
           adminPaymentStatus: "pending",
           userId: userId,
-        },
+          external_reference: external
+        }
       });
+
+      if (!order) {
+        return reply.status(400).send({ message: "Order not created" });
+      }
 
       return reply.status(200).send({
         paymentLink:
@@ -113,24 +127,58 @@ export async function orderRoutes(app: FastifyInstance) {
         qrCodeImg:
           paymentResult.point_of_interaction?.transaction_data?.qr_code,
         qrCodeBase64:
-          paymentResult.point_of_interaction?.transaction_data?.qr_code_base64,
+          paymentResult.point_of_interaction?.transaction_data?.qr_code_base64
       });
     }
   );
 
+  interface PaymentData {
+    description: string;
+    payment_method_id: string;
+    payer: {
+      email: string;
+      identification: {
+        type: string;
+        number: string;
+      };
+    };
+    token?: string | null;
+    installments?: number | null;
+  }
+
+  interface Order {
+    id: string;
+    userId: string;
+    brlValue: number;
+    yuanValue: number;
+    userPaymentStatus: string;
+    adminPaymentStatus: string;
+    expireAt: string;
+    paymentData: PaymentData;
+    proofOfPayment?: { link: string } | null;
+    qrCode?: { link: string } | null;
+    user: { phone: string };
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
   app.withTypeProvider<ZodTypeProvider>().get(
     "/orders/:id",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Get Order by ID",
         tags: ["Orders"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         response: {
           200: any,
-          404: z.object({ message: z.string() }),
+          404: z.object({ message: z.string() })
         },
-        preHandler: [autenticarToken],
-      },
+        preHandler: [autenticarToken]
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -144,9 +192,8 @@ export async function orderRoutes(app: FastifyInstance) {
           yuanValue: true,
           userPaymentStatus: true,
           adminPaymentStatus: true,
-          proofOfPaymentId: true,
-          expireAt: true,
-        },
+          expireAt: true
+        }
       });
 
       if (!order) {
@@ -160,15 +207,14 @@ export async function orderRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     "/orders",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Get Orders",
         tags: ["Orders"],
-        response: {
-          200: any,
-          404: z.object({ message: z.string() }),
-        },
-        preHandler: [autenticarToken],
-      },
+        headers: z.object({
+          authorization: z.string().optional()
+        })
+      }
     },
     async (request, reply) => {
       const orders = await prisma.order.findMany({
@@ -179,20 +225,67 @@ export async function orderRoutes(app: FastifyInstance) {
           yuanValue: true,
           userPaymentStatus: true,
           adminPaymentStatus: true,
-          proofOfPaymentId: true,
           expireAt: true,
           createdAt: true,
           paymentData: true,
           proofOfPayment: true,
           qrCode: true,
-          supplierQrCodeId: true,
           updatedAt: true,
-          user: true,
-        },
+          user: true
+        }
       });
 
       if (!orders) {
-        return reply.status(204).send({ message: "No orders" });
+        return reply.status(404).send({ message: "No orders" });
+      }
+
+      return reply.status(200).send(orders);
+    }
+  );
+
+  const requestParamsSchema = z.object({
+    id: z.string().uuid()
+  });
+
+  app.withTypeProvider<ZodTypeProvider>().get(
+    "/orders/user/:id",
+    {
+      preHandler: autenticarToken,
+      schema: {
+        // summary: "Get Orders",
+        // tags: ["Orders"],
+        params: requestParamsSchema,
+        headers: z.object({
+          authorization: z.string().optional()
+        })
+      }
+    },
+    async (request, reply) => {
+      const { id } = requestParamsSchema.parse(request.params);
+
+      const orders = await prisma.order.findMany({
+        where: {
+          userId: id
+        },
+        select: {
+          id: true,
+          userId: true,
+          brlValue: true,
+          yuanValue: true,
+          userPaymentStatus: true,
+          adminPaymentStatus: true,
+          expireAt: true,
+          createdAt: true,
+          paymentData: true,
+          proofOfPayment: true,
+          qrCode: true,
+          updatedAt: true,
+          user: true
+        }
+      });
+
+      if (!orders) {
+        return reply.status(404).send({ message: "No orders" });
       }
 
       return reply.status(200).send(orders);
@@ -202,17 +295,21 @@ export async function orderRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().put(
     "/orders/:id",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Update Order by ID",
         tags: ["Orders"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         body: orderSchema,
         response: {
           200: any,
-          404: z.object({ message: z.string() }),
+          404: z.object({ message: z.string() })
         },
-        preHandler: [autenticarToken],
-      },
+        preHandler: [autenticarToken]
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
@@ -228,9 +325,8 @@ export async function orderRoutes(app: FastifyInstance) {
           yuanValue: true,
           userPaymentStatus: true,
           adminPaymentStatus: true,
-          proofOfPaymentId: true,
-          expireAt: true,
-        },
+          expireAt: true
+        }
       });
 
       if (!order) {
@@ -244,22 +340,26 @@ export async function orderRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().delete(
     "/orders/:id",
     {
+      preHandler: autenticarToken,
       schema: {
         summary: "Delete Order by ID",
         tags: ["Orders"],
+        headers: z.object({
+          authorization: z.string().optional()
+        }),
         params: z.object({ id: z.string().uuid() }),
         response: {
           204: z.null(),
-          404: z.object({ message: z.string() }),
+          404: z.object({ message: z.string() })
         },
-        preHandler: [autenticarToken],
-      },
+        preHandler: [autenticarToken]
+      }
     },
     async (request, reply) => {
       const { id } = request.params;
 
       const order = await prisma.order.delete({
-        where: { id },
+        where: { id }
       });
 
       if (!order) {
