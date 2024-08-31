@@ -100,9 +100,9 @@ export async function orderRoutes(app: FastifyInstance) {
       const yuanValue = Number(
         (body.brlValue * config.yuanPercentageIncrease).toFixed(2)
       );
-      // if (yuanValue !== body.yuanValue) {
-      //   return reply.status(400).send({ message: "Valor em yuan inválido" });
-      // }
+      if (yuanValue !== body.yuanValue) {
+        return reply.status(400).send({ message: "Valor em yuan inválido" });
+      }
 
       let paymentInfo = {
         body: {
