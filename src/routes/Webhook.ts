@@ -26,42 +26,19 @@ export async function Webhook(app: FastifyInstance) {
         );
 
         const externalReference = response.data.external_reference;
+        const status = response.data.status;
 
-        console.log("External Reference: ", externalReference);
+        const searchOrder = await prisma.order.update({
+          where: {
+            external_reference: externalReference,
+          },
+          data: {
+            userPaymentStatus: status,
+          },
+        });
 
-        switch (type) {
-          case "payment":
-            const searchOrder = await prisma.order.update({
-              where: {
-                external_reference: externalReference,
-              },
-              data: {
-                userPaymentStatus: "payment",
-              },
-            });
-
-            if (!searchOrder) {
-              return reply.status(400).send({ message: "Order not found" });
-            }
-
-            break;
-          case "chargebacks":
-            const searchOrderChargeback = await prisma.order.update({
-              where: {
-                external_reference: externalReference,
-              },
-              data: {
-                userPaymentStatus: "chargebacks",
-              },
-            });
-
-            if (!searchOrderChargeback) {
-              return reply.status(400).send({ message: "Order not found" });
-            }
-
-            break;
-          default:
-            return reply.status(400).send({ message: "Invalid type" });
+        if (!searchOrder) {
+          return reply.status(400).send({ message: "Order not found" });
         }
       } catch (error: any) {
         return reply.status(400).send({ message: error.message });

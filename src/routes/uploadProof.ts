@@ -123,7 +123,7 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
       const updatedOrder = await prisma.order.update({
         where: { id },
         data: {
-          adminPaymentStatus: "payment",
+          adminPaymentStatus: "approved",
         },
       });
 

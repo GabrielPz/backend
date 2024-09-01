@@ -46,6 +46,9 @@ components:
               type: string
             payment_method_id:
               type: string
+            token:
+              type: string
+              nullable: true
             payer:
               type: object
               properties:
@@ -357,6 +360,8 @@ paths:
               schema:
                 type: object
                 properties:
+                  orderId:
+                    type: string
                   paymentLink:
                     type: string
                     nullable: true

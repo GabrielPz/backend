@@ -138,7 +138,7 @@ export async function orderRoutes(app: FastifyInstance) {
 
       try {
         paymentResult = await payments.create(paymentInfo);
-        console.log(paymentResult);
+        console.log("Payment Status", paymentResult.status);
       } catch (error) {
         console.log("Erro ao processar pagamento:", error);
         return reply
@@ -166,6 +166,10 @@ export async function orderRoutes(app: FastifyInstance) {
           external_reference: external,
         },
       });
+
+      try {
+        console.log("Order created", order);
+      } catch (err) {}
 
       if (!order) {
         return reply.status(400).send({ message: "Order not created" });
