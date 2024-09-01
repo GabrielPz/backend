@@ -36,6 +36,7 @@ model Order {
   external_reference String?         @unique @map("external_reference")
   closed             Boolean         @default(false)
   paymentData        Json?
+  pixInfo            Json?
   qrCode             QrCode?
   proofOfPayment     ProofOfPayment?
 

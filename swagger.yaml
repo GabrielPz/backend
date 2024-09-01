@@ -58,6 +58,73 @@ components:
                       type: string
                     number:
                       type: string
+    PaymentData:
+      type: object
+      properties:
+        description:
+          type: string
+        payment_method_id:
+          type: string
+        payer:
+          type: object
+          properties:
+            email:
+              type: string
+            identification:
+              type: object
+              properties:
+                type:
+                  type: string
+                number:
+                  type: string
+    OrderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        closed:
+          type: boolean
+        brlValue:
+          type: number
+        yuanValue:
+          type: number
+        userPaymentStatus:
+          type: string
+        adminPaymentStatus:
+          type: string
+        pixInfo:
+          type: object
+          properties:
+            qrCodeImg:
+              type: string
+            paymentLink:
+              type: string
+        proofOfPayment:
+          type: object
+          properties:
+            link:
+              type: string
+          nullable: true
+        qrCode:
+          type: object
+          properties:
+            link:
+              type: string
+          nullable: true
+        user:
+          type: object
+          properties:
+            name:
+              type: string
+            phone:
+              type: string
+            email:
+              type: string
+          nullable: true
     QrCode:
       type: object
       properties:
@@ -327,7 +394,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
+                $ref: '#/components/schemas/OrderResponse'
         '404':
           description: Order not found
           content:
@@ -414,9 +481,41 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Order'
+                  $ref: '#/components/schemas/OrderResponse'
         '404':
           description: Orders not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /orders/close/{id}:
+    put:
+      summary: Close Order by ID
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order Closed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Order not found
           content:
             application/json:
               schema:

@@ -120,6 +120,17 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
           .send({ message: "Error creating Proof of Payment" });
       }
 
+      const updatedOrder = await prisma.order.update({
+        where: { id },
+        data: {
+          adminPaymentStatus: "payment",
+        },
+      });
+
+      if (!updatedOrder) {
+        return reply.status(400).send({ message: "Error updating Order" });
+      }
+
       return reply.status(200).send({ message: "File uploaded" });
     }
   );
