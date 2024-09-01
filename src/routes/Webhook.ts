@@ -5,14 +5,14 @@ import axios from "axios";
 import { prisma } from "../lib/prisma";
 
 export async function Webhook(app: FastifyInstance) {
-  app.withTypeProvider<ZodTypeProvider>().post(
-    "/webhook", { config: { rawBody: true } },
-    async (request, reply) => {
+  app
+    .withTypeProvider<ZodTypeProvider>()
+    .post("/webhook", { config: { rawBody: true } }, async (request, reply) => {
       try {
         const { data } = request.body as any;
         const { id, type } = data;
 
-        console.log("request body: " + request.body);
+        console.log("request body: " + JSON.stringify(request.body));
         console.log("id e type: " + id, type);
 
         const response = await axios.get(
@@ -67,6 +67,5 @@ export async function Webhook(app: FastifyInstance) {
       }
 
       return reply.status(200).send({ message: "Webhook received" });
-    }
-  );
+    });
 }
