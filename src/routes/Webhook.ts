@@ -10,7 +10,8 @@ export async function Webhook(app: FastifyInstance) {
     .post("/webhook", { config: { rawBody: true } }, async (request, reply) => {
       try {
         const { data } = request.body as any;
-        const { id, type } = data;
+        const { id } = data;
+        const type = (request.body as any).type;
 
         console.log("request body: " + JSON.stringify(request.body));
         console.log("id e type: " + id, type);
@@ -26,7 +27,7 @@ export async function Webhook(app: FastifyInstance) {
 
         const externalReference = response.data.external_reference;
 
-        console.log(externalReference);
+        console.log("External Reference: ", externalReference);
 
         switch (type) {
           case "payment":
