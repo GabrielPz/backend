@@ -82,6 +82,13 @@ export async function orderRoutes(app: FastifyInstance) {
           id: true,
         },
       });
+
+      if (!user) {
+        return reply.status(400).send({
+          message: `Usuário ${request.body.paymentData.payer.email} não cadastrado no sistema`,
+        });
+      }
+
       const userId = user!.id;
       const external = v4();
 
