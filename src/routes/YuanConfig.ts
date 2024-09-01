@@ -51,13 +51,9 @@ export async function yuanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
     "/yuan",
     {
-      preHandler: autenticarToken,
       schema: {
         summary: "Get Yuan Configs",
         tags: ["Yuan"],
-        headers: z.object({
-          authorization: z.string().optional(),
-        }),
         response: {
           200: z.array(yuanSchema.extend({ id: z.string().uuid() })),
         },
