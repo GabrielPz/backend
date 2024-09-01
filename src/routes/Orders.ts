@@ -65,6 +65,7 @@ export async function orderRoutes(app: FastifyInstance) {
         }),
         response: {
           201: z.object({
+            orderId: z.string().uuid(),
             paymentLink: z.string().nullish(),
             qrCodeImg: z.string().nullish(),
             qrCodeBase64: z.string().nullish(),
@@ -171,6 +172,7 @@ export async function orderRoutes(app: FastifyInstance) {
       }
 
       return reply.status(201).send({
+        orderId: order.id,
         paymentLink:
           paymentResult.point_of_interaction?.transaction_data?.ticket_url ??
           "",
