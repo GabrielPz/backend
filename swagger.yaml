@@ -99,6 +99,8 @@ components:
           type: string
         adminPaymentStatus:
           type: string
+        createdAt:
+          type: string
         pixInfo:
           type: object
           properties:
