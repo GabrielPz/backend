@@ -215,6 +215,7 @@ export async function orderRoutes(app: FastifyInstance) {
           yuanValue: true,
           userPaymentStatus: true,
           adminPaymentStatus: true,
+          closed: true,
           createdAt: true,
           proofOfPayment: {
             select: {
@@ -298,6 +299,7 @@ export async function orderRoutes(app: FastifyInstance) {
           userPaymentStatus: true,
           adminPaymentStatus: true,
           createdAt: true,
+          closed: true,
           proofOfPayment: {
             select: {
               link: true,
@@ -354,6 +356,7 @@ export async function orderRoutes(app: FastifyInstance) {
           userPaymentStatus: true,
           createdAt: true,
           adminPaymentStatus: true,
+          closed: true,
           proofOfPayment: {
             select: {
               link: true,
