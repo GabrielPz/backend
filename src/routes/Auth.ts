@@ -115,6 +115,26 @@ export const autenticarToken = async (
   }
 };
 
+export const checkRole = (roles: string[]) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const rqBody = (request as any).usuario;
+    const user = await prisma.user.findUnique({
+      where: {
+        id: rqBody.id,
+      },
+      select: {
+        role: true,
+      },
+    });
+
+    if (!user) {
+      return reply.status(401).send({ message: "User not found" });
+    }
+    if (!user || !roles.includes(user.role)) {
+      return reply.status(403).send({ message: "Access denied" });
+    }
+  };
+};
 // export const autenticarToken = async (
 //   request: FastifyRequest,
 //   reply: FastifyReply,

@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  PARTICIPANT
+  ADMIN
+  OWNER
+}
+
 model User {
   id       String  @id @default(uuid())
   name     String
@@ -15,9 +21,11 @@ model User {
   phone    String  @unique
   password String
   orders   Order[]
+  role     Role    @default(PARTICIPANT)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  forgotPassword forgotPassword[]
 
   @@map("users")
 }
@@ -70,4 +78,12 @@ model ProofOfPayment {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("proofs_of_payment")
+}
+
+model forgotPassword {
+  id      String   @id @default(cuid())
+  token   String
+  expires DateTime
+  userId  String   @unique
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -8,6 +8,6 @@
       "skipLibCheck": true,
       "types": ["node"]
     },
-    "include": ["src/**/*.ts", "global.d.ts"],
+    "include": ["src/**/*.ts", "global.d.ts", "src/services/nodeMailer.js"],
     "exclude": ["node_modules"]
   }

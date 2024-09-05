@@ -1,4 +1,4 @@
-import { autenticarToken } from "./Auth";
+import { autenticarToken, checkRole } from "./Auth";
 import { storage } from "../services/firebase";
 import {
   ref,
@@ -52,7 +52,7 @@ export async function uploadProofsOfPayment(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/proofs-of-payment/upload/:id",
     {
-      preHandler: autenticarToken,
+      preHandler: [autenticarToken, checkRole(["ADMIN"])],
       schema: {
         preHandler: [
           // autenticarToken

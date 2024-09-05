@@ -2,7 +2,7 @@ import fastify, { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { prisma } from "../lib/prisma";
 import { z } from "zod";
-import { autenticarToken } from "./Auth";
+import { autenticarToken, checkRole } from "./Auth";
 
 const yuanSchema = z.object({
   yuanPercentageIncrease: z.number(),
@@ -16,7 +16,7 @@ export async function yuanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/yuan",
     {
-      preHandler: autenticarToken,
+      preHandler: [autenticarToken, checkRole(["ADMIN"])],
       schema: {
         summary: "Create Yuan Config",
         tags: ["Yuan"],
@@ -74,7 +74,7 @@ export async function yuanRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().put(
     "/yuan",
     {
-      preHandler: autenticarToken,
+      preHandler: [autenticarToken, checkRole(["ADMIN"])],
       schema: {
         summary: "Update Yuan Config",
         tags: ["Yuan"],
