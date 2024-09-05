@@ -2,11 +2,12 @@ import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { prisma } from "../lib/prisma";
 import { z } from "zod";
-import { autenticarToken } from "./Auth";
+import { autenticarToken, checkRole } from "./Auth";
 import bcrypt from "bcrypt";
 
 import speakeasy from "speakeasy";
 import { transporter } from "../services/nodeMailer";
+import { Role } from "@prisma/client";
 
 const userSchema = z.object({
   name: z.string(),
@@ -14,6 +15,10 @@ const userSchema = z.object({
   email: z.string(),
   phone: z.string(),
   password: z.string(),
+});
+
+const updateroleSchema = z.object({
+  role: z.string(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -297,6 +302,56 @@ export async function userRoutes(app: FastifyInstance) {
       }
 
       return reply.status(200).send(user);
+    }
+  );
+  app.withTypeProvider<ZodTypeProvider>().put(
+    "/users/update-role/:id",
+    {
+      preHandler: [autenticarToken, checkRole(["ADMIN"])],
+      schema: {
+        summary: "Update role by User ID",
+        tags: ["Users"],
+        headers: z.object({
+          authorization: z.string().optional(),
+        }),
+        params: z.object({ id: z.string().uuid() }),
+        body: updateroleSchema,
+        response: {
+          200: z.object({ message: z.string() }),
+          404: z.object({ message: z.string() }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+      const reqBody = updateroleSchema.parse(request.body);
+
+      if (reqBody.role !== "ADMIN" && reqBody.role !== "PARTICIPANT") {
+        return reply.status(400).send({
+          message: "Invalid Role, available option: PARTICIPANT, ADMIN",
+        });
+      }
+
+      const user = await prisma.user.update({
+        where: { id },
+        data: {
+          role: reqBody.role,
+        },
+        select: {
+          id: true,
+          name: true,
+          cpf: true,
+          email: true,
+          phone: true,
+          role: true,
+        },
+      });
+
+      if (!user) {
+        return reply.status(404).send({ message: "User not found" });
+      }
+
+      return reply.status(200).send({ message: "Role updated successfully" });
     }
   );
 
