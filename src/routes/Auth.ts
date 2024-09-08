@@ -28,6 +28,7 @@ export async function login(app: FastifyInstance) {
             token: z.string(),
             id: z.string().uuid(),
             name: z.string(),
+            role: z.any(),
             cpf: z.string(),
             email: z.string().email(),
           }),
@@ -48,6 +49,7 @@ export async function login(app: FastifyInstance) {
           name: true,
           email: true,
           password: true,
+          role: true,
           cpf: true,
         },
       });
@@ -75,6 +77,63 @@ export async function login(app: FastifyInstance) {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
+        cpf: user.cpf,
+      });
+    }
+  );
+  app.withTypeProvider<ZodTypeProvider>().get(
+    "/current",
+    {
+      preHandler: autenticarToken,
+      schema: {
+        summary: "Current",
+        headers: z.object({
+          authorization: z.string().optional(),
+        }),
+        tags: ["User"],
+        response: {
+          200: z.object({
+            id: z.string().uuid(),
+            name: z.string(),
+            role: z.any(),
+            cpf: z.string(),
+            email: z.string().email(),
+          }),
+          400: z.object({
+            message: z.string(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const rqBody = (request as any).usuario;
+      if (!rqBody) {
+        throw new BadRequest("User not found");
+      }
+      const user = await prisma.user.findUnique({
+        where: {
+          id: rqBody.id,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          password: true,
+          role: true,
+          cpf: true,
+        },
+      });
+
+      if (!user) {
+        throw new BadRequest("User not found");
+      }
+
+      return reply.status(200).send({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
         cpf: user.cpf,
       });
     }
