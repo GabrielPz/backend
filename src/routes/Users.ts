@@ -4,10 +4,8 @@ import { prisma } from "../lib/prisma";
 import { z } from "zod";
 import { autenticarToken, checkRole } from "./Auth";
 import bcrypt from "bcrypt";
-
 import speakeasy from "speakeasy";
 import { transporter } from "../services/nodeMailer";
-import { Role } from "@prisma/client";
 
 const userSchema = z.object({
   name: z.string(),
@@ -348,10 +346,12 @@ export async function userRoutes(app: FastifyInstance) {
       });
 
       if (!user) {
-        return reply.status(404).send({ message: "User not found" });
+        return reply.status(404).send({ message: "Usuário não encontrado" });
       }
 
-      return reply.status(200).send({ message: "Role updated successfully" });
+      return reply
+        .status(200)
+        .send({ message: "Permissões atualizadas com sucesso" });
     }
   );
 

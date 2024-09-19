@@ -105,16 +105,26 @@ export async function orderRoutes(app: FastifyInstance) {
           .send({ message: "Configure um valor de câmbio primeiro" });
       }
 
+      const {
+        brlValue,
+        yuanValue: yuanValueFromRequest,
+        paymentData: { payment_method_id: method },
+      } = body;
+      const { yuanPercentageIncrease } = config;
+
+      const finalBrlValue = method === "pix" ? brlValue : brlValue * 1.04;
+
       const yuanValue = Number(
-        (body.brlValue * config.yuanPercentageIncrease).toFixed(2)
+        (body.brlValue * yuanPercentageIncrease).toFixed(2)
       );
+
       if (yuanValue !== body.yuanValue) {
         return reply.status(400).send({ message: "Valor em yuan inválido" });
       }
 
       let paymentInfo = {
         body: {
-          transaction_amount: body.brlValue,
+          transaction_amount: finalBrlValue,
           description: body.paymentData.description,
           payment_method_id: body.paymentData.payment_method_id,
           payer: {
@@ -130,6 +140,7 @@ export async function orderRoutes(app: FastifyInstance) {
         },
         requestOptions: { idempotencyKey: external },
       };
+
       if (body.paymentData.token != null) {
         (paymentInfo.body as any).token = body.paymentData.token;
       }
@@ -149,6 +160,7 @@ export async function orderRoutes(app: FastifyInstance) {
       const order = await prisma.order.create({
         data: {
           ...orderData,
+          brlValue: finalBrlValue,
           closed: false,
           pixInfo: {
             paymentLink:
@@ -172,7 +184,7 @@ export async function orderRoutes(app: FastifyInstance) {
       } catch (err) {}
 
       if (!order) {
-        return reply.status(400).send({ message: "Order not created" });
+        return reply.status(400).send({ message: "Erro ao criar pedido" });
       }
 
       return reply.status(201).send({
@@ -239,7 +251,7 @@ export async function orderRoutes(app: FastifyInstance) {
       });
 
       if (!order) {
-        return reply.status(404).send({ message: "Order not found" });
+        return reply.status(404).send({ message: "Pedido não encontrado" });
       }
 
       return reply.status(200).send(order);
@@ -269,10 +281,10 @@ export async function orderRoutes(app: FastifyInstance) {
       });
 
       if (!order) {
-        return reply.status(404).send({ message: "Order not found" });
+        return reply.status(404).send({ message: "Pedido não encontrado" });
       }
 
-      return reply.status(200).send({ message: "Order closed" });
+      return reply.status(200).send({ message: "Pedido fechado" });
     }
   );
 
@@ -322,7 +334,7 @@ export async function orderRoutes(app: FastifyInstance) {
       });
 
       if (!orders) {
-        return reply.status(404).send({ message: "No orders" });
+        return reply.status(404).send({ message: "Sem pedidos" });
       }
 
       return reply.status(200).send(orders);
@@ -442,7 +454,7 @@ export async function orderRoutes(app: FastifyInstance) {
       });
 
       if (!order) {
-        return reply.status(404).send({ message: "Order not found" });
+        return reply.status(404).send({ message: "Pedido não encontrado" });
       }
 
       return reply.status(200).send(order);
@@ -476,7 +488,7 @@ export async function orderRoutes(app: FastifyInstance) {
       });
 
       if (!order) {
-        return reply.status(404).send({ message: "Order not found" });
+        return reply.status(404).send({ message: "Pedido não encontrado" });
       }
 
       return reply.status(204).send();

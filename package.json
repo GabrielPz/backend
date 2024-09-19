@@ -7,19 +7,21 @@
   "scripts": {
     "start": "tsx watch src/server.ts",
     "dev": "tsx watch --env-file .env src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "prisma migrate deploy && ts-node seed.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^1.4.12",
-    "@types/node": "^20.12.2",
+    "@types/node": "^20.16.5",
     "@types/speakeasy": "^2.0.10",
     "@types/uuid": "^10.0.0",
     "prisma": "^5.12.0",
+    "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.5.4"
+    "typescript": "^5.6.2"
   },
   "dependencies": {
     "@fastify/cookie": "^9.4.0",
@@ -47,7 +49,6 @@
     "nodemailer": "^6.9.13",
     "pdf-parse": "^1.1.1",
     "speakeasy": "^2.0.0",
-    "ts-node": "^10.9.2",
     "uuid": "^10.0.0",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.23.2"

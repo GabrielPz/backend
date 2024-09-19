@@ -15,11 +15,8 @@ import { proofOfPaymentRoutes } from "./routes/ProofOfPayments";
 import { qrCodeRoutes } from "./routes/QrCodes";
 import { userRoutes } from "./routes/Users";
 import { yuanRoutes } from "./routes/YuanConfig";
-import fjwt, { FastifyJWT } from "@fastify/jwt";
 import fastifyRawBody from "fastify-raw-body";
 
-import fCookie from "@fastify/cookie";
-import fastifyMultipart from "@fastify/multipart";
 import { uploadProofsOfPayment } from "./routes/uploadProof";
 import { uploadQrCode } from "./routes/uploadQrCode";
 import { Webhook } from "./routes/Webhook";
@@ -33,38 +30,9 @@ app.register(fastifyCors, {
 
 app.register(fastifyRawBody, {
   runFirst: true,
-  global: false
+  global: false,
 });
 
-// app.register(fjwt, {
-//   secret: process.env.JWT_SECRET || "imvinojan02061999xxxx",
-// });
-
-// app.addHook("preHandler", (req, res, next) => {
-//   req.jwt = app.jwt;
-//   return next();
-// });
-
-// app.register(fCookie, {
-//   secret: process.env.COOKIE_SECRET || "imvinojan02061999xxxx",
-//   hook: "preHandler",
-// });
-
-// app.decorate(
-//   "authenticate",
-//   async (request: FastifyRequest, reply: FastifyReply) => {
-//     const token = request.cookies.access_token;
-
-//     if (!token) {
-//       return reply.status(401).send({ message: "Authentication required" });
-//     }
-
-//     const decoded = request.jwt.verify<FastifyJWT["user"]>(token);
-//     request.user = decoded;
-//   }
-// );
-
-// app.register(fastifyMultipart, { attachFieldsToBody: true });
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
